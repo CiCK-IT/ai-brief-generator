@@ -4,6 +4,16 @@ import { useMemo, useRef, useState } from "react";
 
 type Maturity = "尚未分析" | "初步想法" | "方向明確" | "適合進一步報價";
 
+type BriefForm = {
+  clientName: string;
+  fillDate: string;
+  source: string;
+  contact: string;
+  selectedType: string;
+  budget: string;
+  timeline: string;
+};
+
 type BriefBreakdown = {
   primaryGoal: string[];
   requiredFeatures: string[];
@@ -15,6 +25,7 @@ type BriefResult = {
   projectType: string;
   breakdown: BriefBreakdown;
   followUpQuestions: string[];
+  coreFeatures: string[];
   maturity: Maturity;
   maturityNote: string;
   nextStep: string;
@@ -25,8 +36,41 @@ type ProjectRule = {
   keywords: string[];
   breakdown: BriefBreakdown;
   followUpQuestions: string[];
+  coreFeatures: string[];
   summaryFocus: string;
   nextStep: string;
+};
+
+const sourceOptions = [
+  "LINE 官方帳號",
+  "接案平台",
+  "朋友介紹",
+  "Instagram",
+  "104 / 履歷",
+  "網站表單",
+  "其他",
+];
+
+const projectTypeOptions = [
+  "報價工具",
+  "詢價 / 需求收集頁",
+  "品牌形象頁 / 作品集頁",
+  "管理工具 / Dashboard",
+  "AI 工具 / 自動化流程",
+  "尚未確定",
+];
+
+const budgetOptions = ["1 萬以下", "1–3 萬", "3–5 萬", "5–10 萬", "10 萬以上", "尚未確定"];
+const timelineOptions = ["一週內", "兩週內", "一個月內", "一到三個月", "尚未確定"];
+
+const defaultForm: BriefForm = {
+  clientName: "",
+  fillDate: "",
+  source: "",
+  contact: "",
+  selectedType: "尚未確定",
+  budget: "尚未確定",
+  timeline: "尚未確定",
 };
 
 const examples = [
@@ -54,6 +98,8 @@ const fallbackBreakdown: BriefBreakdown = {
   extendableFeatures: ["參考案例收集", "初步 MVP 範圍規劃", "後續提案方向整理"],
 };
 
+const fallbackCoreFeatures = ["需求訪談整理", "功能範圍確認", "預算與時程釐清", "MVP 優先順序規劃"];
+
 const projectRules: ProjectRule[] = [
   {
     projectType: "報價工具",
@@ -70,6 +116,7 @@ const projectRules: ProjectRule[] = [
       "是否需要把客戶填寫資料與報價紀錄儲存起來？",
       "是否需要稅額、折扣、PDF 報價單或通知功能？",
     ],
+    coreFeatures: ["客戶需求表單", "品項與數量設定", "價格計算邏輯", "報價摘要預覽", "送出成功提示"],
     nextStep: "建議先整理 MVP 報價流程，確認品項、價格規則、稅額與摘要格式，再判斷是否需要資料庫、PDF 匯出與通知功能。",
   },
   {
@@ -87,6 +134,7 @@ const projectRules: ProjectRule[] = [
       "需求資料是否要儲存到資料庫，或只需要寄信通知？",
       "詢價頁需要哪些必填欄位，例如預算、時程、服務類型或附件？",
     ],
+    coreFeatures: ["客戶資料欄位", "需求內容填寫", "預算與時程選擇", "聯絡方式收集", "送出確認訊息"],
     nextStep: "建議先定義詢價表單欄位與必填資訊，再確認是否需要資料儲存、通知流程與後續管理介面。",
   },
   {
@@ -104,6 +152,7 @@ const projectRules: ProjectRule[] = [
       "是否需要多人使用與權限管理？",
       "資料來源會從表單進來，還是需要手動新增與編輯？",
     ],
+    coreFeatures: ["客戶列表", "案件狀態欄位", "搜尋與篩選", "內部備註", "報價進度追蹤"],
     nextStep: "建議先盤點案件欄位、狀態流程與日常查找方式，再決定是否需要登入、權限、通知與資料匯出。",
   },
   {
@@ -121,17 +170,36 @@ const projectRules: ProjectRule[] = [
       "作品案例需要呈現哪些資訊，例如前後對比、成果數據或服務範圍？",
       "主要 CTA 是預約諮詢、填寫表單，還是導向 LINE 聯絡？",
     ],
+    coreFeatures: ["品牌主視覺區", "服務內容介紹", "作品案例展示", "合作流程", "聯絡 CTA"],
     nextStep: "建議先整理品牌定位、服務項目、作品素材與主要 CTA，再規劃首頁架構與行動版重點內容。",
+  },
+  {
+    projectType: "AI 工具 / 自動化流程",
+    keywords: ["AI", "自動化", "流程", "整理", "分析", "產生", "通知", "串接"],
+    summaryFocus:
+      "這份需求可以整理成 AI 工具或自動化流程，重點會放在把重複性資料整理、通知、判斷或內容產生流程變得更省時，第一版仍應先明確資料來源與人工覆核方式。",
+    breakdown: {
+      primaryGoal: ["減少重複整理工作", "把人工判斷流程轉成可追蹤的半自動化步驟"],
+      requiredFeatures: ["資料輸入欄位", "規則或提示詞設定", "整理結果預覽", "人工確認流程"],
+      extendableFeatures: ["AI API 串接", "自動通知", "第三方工具整合", "歷史紀錄保存"],
+    },
+    followUpQuestions: [
+      "目前希望自動化的是哪一段流程，輸入與輸出分別是什麼？",
+      "結果是否需要人工確認後才能送出或儲存？",
+      "未來是否需要串接表單、試算表、Email、LINE 或其他工具？",
+    ],
+    coreFeatures: ["資料輸入區", "規則設定", "整理結果預覽", "人工確認", "流程狀態提示"],
+    nextStep: "建議先畫出目前人工流程，定義輸入資料、輸出格式與需要人工確認的節點，再決定後續是否串接 AI API 或第三方工具。",
   },
 ];
 
 const defaultResult: BriefResult = {
   summary:
-    "目前尚未開始整理。貼上客戶需求或點選左側範例後，Demo 會把原始描述轉成一張初步 brief，協助你快速判斷專案方向、功能範圍與下一步溝通重點。",
+    "目前尚未開始整理。填寫基本資料、專案資訊，並貼上客戶需求後，Demo 會把原始描述轉成一張初步 brief，協助你快速判斷專案方向、功能範圍與下一步溝通重點。",
   projectType: "等待需求輸入",
   breakdown: {
     primaryGoal: ["等待客戶需求內容", "準備產生初步專案方向"],
-    requiredFeatures: ["需求摘要", "需求類型判斷", "功能拆解", "成熟度判斷"],
+    requiredFeatures: ["基本資料", "專案資訊", "原始需求", "成熟度判斷"],
     extendableFeatures: ["補問問題", "MVP 建議", "提案方向整理"],
   },
   followUpQuestions: [
@@ -139,9 +207,10 @@ const defaultResult: BriefResult = {
     "目前是否已有預算、時程或參考風格？",
     "哪些功能是第一版一定要有，哪些可以之後再做？",
   ],
+  coreFeatures: ["Brief 基本資料", "需求描述整理", "需求類型判斷", "下一步建議"],
   maturity: "尚未分析",
   maturityNote: "尚未輸入需求，因此還不能判斷成熟度。",
-  nextStep: "可以先貼上一段客戶描述，或點選範例需求快速試用整理流程。",
+  nextStep: "可以先填寫左側欄位，貼上一段客戶描述，或點選範例需求快速試用整理流程。",
 };
 
 const painPoints = [
@@ -183,7 +252,23 @@ const outcomeCards = [
 ];
 
 const audiences = ["接案者", "設計服務", "顧問服務", "小型品牌", "需要整理需求的服務型產業"];
-const workflow = ["貼上需求", "系統初步整理", "檢視功能與成熟度", "進入報價或提案討論"];
+const workflow = ["填寫 Brief", "系統初步整理", "檢視功能與成熟度", "進入報價或提案討論"];
+
+function getDisplayValue(value: string) {
+  return value.trim() || "尚未填寫";
+}
+
+function getBudgetKnown(form: BriefForm) {
+  return form.budget !== "尚未確定";
+}
+
+function getTimelineKnown(form: BriefForm) {
+  return form.timeline !== "尚未確定";
+}
+
+function findProjectRuleByType(projectType: string) {
+  return projectRules.find((rule) => rule.projectType === projectType);
+}
 
 function findProjectRule(input: string) {
   const scoredRules = projectRules.map((rule, index) => ({
@@ -198,36 +283,68 @@ function findProjectRule(input: string) {
   return scoredRules[0]?.score > 0 ? scoredRules[0].rule : undefined;
 }
 
-function getMaturity(input: string): Maturity {
+function resolveProjectRule(input: string, form: BriefForm) {
+  if (form.selectedType !== "尚未確定") {
+    return findProjectRuleByType(form.selectedType);
+  }
+
+  return findProjectRule(input);
+}
+
+function getMaturity(input: string, form: BriefForm): Maturity {
   const compactLength = input.replace(/\s/g, "").length;
   const hasQuoteReadyInfo = ["預算", "時程", "功能", "參考風格"].some((keyword) =>
     input.includes(keyword),
   );
+  const structuredScore = [
+    form.selectedType !== "尚未確定",
+    getBudgetKnown(form),
+    getTimelineKnown(form),
+    Boolean(form.clientName.trim()),
+    Boolean(form.contact.trim()),
+  ].filter(Boolean).length;
 
-  if (compactLength < 40) return "初步想法";
-  if (compactLength > 120 && hasQuoteReadyInfo) return "適合進一步報價";
-  return "方向明確";
+  if (compactLength > 120 && (hasQuoteReadyInfo || structuredScore >= 3)) {
+    return "適合進一步報價";
+  }
+
+  if (compactLength >= 40 || structuredScore >= 2) {
+    return "方向明確";
+  }
+
+  return "初步想法";
 }
 
-function makeSummary(input: string, rule?: ProjectRule) {
+function makeSummary(input: string, rule: ProjectRule | undefined, form: BriefForm) {
   const cleanInput = input.trim().replace(/\s+/g, " ");
   const shortened =
     cleanInput.length > 96 ? `${cleanInput.slice(0, 96)}...` : cleanInput;
+  const clientText = form.clientName.trim() ? `${form.clientName.trim()} 的需求` : "這份需求";
+  const budgetText = getBudgetKnown(form) ? `預算區間為「${form.budget}」` : "預算尚未確定";
+  const timelineText = getTimelineKnown(form) ? `預計時程為「${form.timeline}」` : "時程尚未確定";
 
   if (!rule) {
-    return `客戶目前描述了「${shortened}」。這段內容已經能作為初步需求來源，但專案類型、使用情境與功能優先順序仍需要進一步釐清，建議先補齊目標、預算、時程與必要功能，再進入估價或提案討論。`;
+    return `${clientText}目前描述了「${shortened}」。根據目前資料，${budgetText}、${timelineText}，專案類型與功能優先順序仍需要進一步釐清，建議先補齊目標、預算、時程與必要功能，再進入估價或提案討論。`;
   }
 
-  return `${rule.summaryFocus} 目前原始描述為「${shortened}」。從專案 brief 角度來看，下一步應先把第一版必做範圍與可延伸項目分開，避免報價時範圍過大或期待不一致。`;
+  return `${clientText}可先整理為「${rule.projectType}」方向。${rule.summaryFocus} 目前原始描述為「${shortened}」，${budgetText}、${timelineText}。從 brief 角度來看，下一步應先把第一版必做範圍與可延伸項目分開，避免報價時範圍過大或期待不一致。`;
 }
 
-function getMaturityNote(maturity: Maturity, projectType: string) {
+function getMaturityNote(maturity: Maturity, projectType: string, form: BriefForm) {
+  const missingItems = [
+    form.selectedType === "尚未確定" ? "需求類型" : "",
+    getBudgetKnown(form) ? "" : "預算區間",
+    getTimelineKnown(form) ? "" : "預計時程",
+  ].filter(Boolean);
+
   if (maturity === "適合進一步報價") {
     return "需求已包含較多關鍵資訊，適合進一步拆成 MVP 範圍、交付項目與報價假設。";
   }
 
   if (maturity === "方向明確") {
-    return "方向已初步明確，但仍需確認功能範圍、資料儲存與預算時程。";
+    return missingItems.length > 0
+      ? `方向已初步明確，但仍需確認${missingItems.join("、")}與功能範圍。`
+      : "方向已初步明確，可開始整理功能範圍、資料流與第一版交付內容。";
   }
 
   if (projectType === "等待需求輸入") {
@@ -237,44 +354,76 @@ function getMaturityNote(maturity: Maturity, projectType: string) {
   return "目前仍偏初步想法，建議補充使用情境、必要功能、預算區間與完成時間。";
 }
 
-function analyzeRequirement(input: string): BriefResult {
+function getContextualQuestions(rule: ProjectRule | undefined, form: BriefForm) {
+  const baseQuestions =
+    rule?.followUpQuestions ?? [
+      "目前最重要的業務目標是什麼？",
+      "是否需要資料儲存、通知或後台管理？",
+      "是否已有參考網站、預算區間或希望完成時間？",
+    ];
+  const questions = [...baseQuestions];
+
+  if (!getBudgetKnown(form)) {
+    questions[1] = "是否已有可接受的預算上限，或可以拆成 MVP 與延伸功能分階段進行？";
+  }
+
+  if (!getTimelineKnown(form)) {
+    questions[2] = "希望完成時間是否有明確期限，或可以分階段上線？";
+  } else if (getBudgetKnown(form)) {
+    questions[2] = `在「${form.budget}」預算與「${form.timeline}」時程下，哪些功能必須放在第一版？`;
+  }
+
+  return questions.slice(0, 3);
+}
+
+function getNextStep(rule: ProjectRule | undefined, form: BriefForm) {
+  const baseNextStep =
+    rule?.nextStep ?? "建議先整理 MVP 功能清單，再確認是否需要資料庫、通知與後台管理。";
+  const missingItems = [
+    form.selectedType === "尚未確定" ? "需求類型" : "",
+    getBudgetKnown(form) ? "" : "預算區間",
+    getTimelineKnown(form) ? "" : "預計時程",
+  ].filter(Boolean);
+  const fastTimeline = form.timeline === "一週內" || form.timeline === "兩週內";
+  const leanBudget = form.budget === "1 萬以下" || form.budget === "1–3 萬";
+  const contextHints = [
+    leanBudget ? "預算偏精簡，建議優先鎖定 MVP 與必要功能。" : "",
+    fastTimeline ? "時程較短，建議先避免加入後台、通知或複雜整合。" : "",
+    missingItems.length > 0 ? `目前仍建議補齊${missingItems.join("、")}。` : "",
+  ].filter(Boolean);
+
+  return contextHints.length > 0 ? `${baseNextStep} ${contextHints.join(" ")}` : baseNextStep;
+}
+
+function analyzeRequirement(input: string, form: BriefForm): BriefResult {
   const trimmed = input.trim();
+  const matchedRule = resolveProjectRule(trimmed, form);
+  const projectType = matchedRule?.projectType ?? "初步需求，建議進一步釐清";
 
   if (!trimmed) {
     return {
       summary: "尚未偵測到需求內容。請先貼上客戶描述，或點選左側範例快速試用。",
-      projectType: "初步需求，建議進一步釐清",
-      breakdown: fallbackBreakdown,
-      followUpQuestions: [
-        "這個需求主要服務誰，使用者會在什麼情境下使用？",
-        "是否已有預算、時程或參考網站？",
-        "第一版最不能缺少的三個功能是什麼？",
-      ],
-      maturity: "初步想法",
-      maturityNote: "目前缺少可分析內容，只能先判斷為初步想法。",
-      nextStep: "建議先補上一段客戶原始描述，再進行初步整理與範圍判斷。",
+      projectType,
+      breakdown: matchedRule?.breakdown ?? fallbackBreakdown,
+      followUpQuestions: getContextualQuestions(matchedRule, form),
+      coreFeatures: matchedRule?.coreFeatures ?? fallbackCoreFeatures,
+      maturity: getMaturity(trimmed, form),
+      maturityNote: getMaturityNote(getMaturity(trimmed, form), projectType, form),
+      nextStep: getNextStep(matchedRule, form),
     };
   }
 
-  const matchedRule = findProjectRule(trimmed);
-  const projectType = matchedRule?.projectType ?? "初步需求，建議進一步釐清";
-  const maturity = getMaturity(trimmed);
+  const maturity = getMaturity(trimmed, form);
 
   return {
-    summary: makeSummary(trimmed, matchedRule),
+    summary: makeSummary(trimmed, matchedRule, form),
     projectType,
     breakdown: matchedRule?.breakdown ?? fallbackBreakdown,
-    followUpQuestions:
-      matchedRule?.followUpQuestions ?? [
-        "目前最重要的業務目標是什麼？",
-        "是否需要資料儲存、通知或後台管理？",
-        "是否已有參考網站、預算區間或希望完成時間？",
-      ],
+    followUpQuestions: getContextualQuestions(matchedRule, form),
+    coreFeatures: matchedRule?.coreFeatures ?? fallbackCoreFeatures,
     maturity,
-    maturityNote: getMaturityNote(maturity, projectType),
-    nextStep:
-      matchedRule?.nextStep ??
-      "建議先整理 MVP 功能清單，再確認是否需要資料庫、通知與後台管理。",
+    maturityNote: getMaturityNote(maturity, projectType, form),
+    nextStep: getNextStep(matchedRule, form),
   };
 }
 
@@ -300,6 +449,89 @@ function SectionHeading({
   );
 }
 
+function FormSection({
+  title,
+  children,
+  description,
+}: {
+  title: string;
+  children: React.ReactNode;
+  description?: string;
+}) {
+  return (
+    <section className="rounded-lg border border-[#e1e7f2] bg-white/62 p-4">
+      <div className="mb-4">
+        <h3 className="text-base font-semibold text-[#151821]">{title}</h3>
+        {description ? <p className="mt-1 text-sm leading-6 text-[#647084]">{description}</p> : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function TextField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-semibold text-[#3c475d]">{label}</span>
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="mt-2 h-12 w-full rounded-lg border border-[#d7deea] bg-white/82 px-4 text-sm text-[#1b2230] outline-none transition placeholder:text-[#9aa6b8] focus:border-[#7d8df1] focus:bg-white focus:ring-4 focus:ring-[#7d8df1]/12"
+      />
+    </label>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-sm font-semibold text-[#3c475d]">{label}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 h-12 w-full rounded-lg border border-[#d7deea] bg-white/82 px-4 text-sm text-[#1b2230] outline-none transition focus:border-[#7d8df1] focus:bg-white focus:ring-4 focus:ring-[#7d8df1]/12"
+      >
+        {placeholder ? (
+          <option value="" disabled>
+            {placeholder}
+          </option>
+        ) : null}
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 function BreakdownGroup({ title, items }: { title: string; items: string[] }) {
   return (
     <div className="rounded-lg border border-white/10 bg-white/[0.06] p-4">
@@ -316,8 +548,18 @@ function BreakdownGroup({ title, items }: { title: string; items: string[] }) {
   );
 }
 
+function OverviewItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.055] px-4 py-3">
+      <p className="text-xs font-semibold text-white/48">{label}</p>
+      <p className="mt-1 text-sm font-semibold leading-6 text-white/88">{getDisplayValue(value)}</p>
+    </div>
+  );
+}
+
 export default function Home() {
   const [requirement, setRequirement] = useState("");
+  const [briefForm, setBriefForm] = useState<BriefForm>(defaultForm);
   const [result, setResult] = useState<BriefResult>(defaultResult);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -328,14 +570,18 @@ export default function Home() {
     return "18%";
   }, [result.maturity]);
 
+  const updateForm = (key: keyof BriefForm, value: string) => {
+    setBriefForm((current) => ({ ...current, [key]: value }));
+  };
+
   const handleExampleClick = (text: string) => {
     setRequirement(text);
-    setResult(analyzeRequirement(text));
+    setResult(analyzeRequirement(text, briefForm));
     inputRef.current?.focus();
   };
 
   const handleAnalyze = () => {
-    setResult(analyzeRequirement(requirement));
+    setResult(analyzeRequirement(requirement, briefForm));
   };
 
   return (
@@ -396,11 +642,11 @@ export default function Home() {
               <div className="rounded-lg bg-white/88 p-4 shadow-sm">
                 <p className="text-xs font-semibold text-[#6171d9]">專案摘要</p>
                 <p className="mt-2 text-sm leading-6 text-[#596579]">
-                  將詢價、功能想法與品牌期待整理成一張可討論的 brief。
+                  將基本資料、專案資訊與原始需求整理成一張可討論的 brief。
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                {["主要目標", "必要功能", "補問問題", "下一步建議"].map((item) => (
+                {["基本資料", "專案資訊", "補問問題", "下一步建議"].map((item) => (
                   <div key={item} className="rounded-lg border border-[#e2e8f2] bg-white/86 px-3 py-3">
                     <p className="text-sm font-semibold text-[#273044]">{item}</p>
                   </div>
@@ -438,8 +684,8 @@ export default function Home() {
       <section id="brief-tool" className="relative mx-auto w-full max-w-7xl px-6 py-18 md:px-10 md:py-24">
         <SectionHeading
           eyebrow="Interactive Demo"
-          title="貼上需求，立即產生初步整理"
-          description="第一版以關鍵字規則模擬 AI 整理流程，讓作品集先完整呈現使用情境與互動價值。"
+          title="建立客戶需求 Brief，立即產生初步整理"
+          description="以基本資料、專案資訊與原始需求模擬 AI 整理流程，讓作品集呈現更完整的接案前置工作。"
         />
 
         <div className="mb-5 rounded-lg border border-[#cfd8f6] bg-white/80 p-5 shadow-[0_16px_42px_rgba(67,84,130,0.09)] backdrop-blur">
@@ -456,41 +702,98 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="grid gap-5 lg:grid-cols-[0.98fr_1.02fr]">
           <div className="card-shadow rounded-lg border border-white/70 bg-white/88 p-5 backdrop-blur md:p-6">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold text-[#6171d9]">需求輸入區</p>
-                <h2 className="mt-2 text-2xl font-semibold text-[#151821]">貼上客戶需求</h2>
+                <p className="text-sm font-semibold text-[#6171d9]">Brief 建立工具</p>
+                <h2 className="mt-2 text-2xl font-semibold text-[#151821]">客戶需求資料</h2>
               </div>
               <div className="rounded-full bg-[#f0f4fa] px-3 py-1 text-xs font-semibold text-[#647084]">
                 Frontend Demo
               </div>
             </div>
 
-            <label htmlFor="requirement" className="sr-only">
-              貼上客戶需求
-            </label>
-            <textarea
-              ref={inputRef}
-              id="requirement"
-              value={requirement}
-              onChange={(event) => setRequirement(event.target.value)}
-              placeholder="例如：我想做一個可以讓客人填資料的網站，最好可以自動算價格，也想要看起來有質感，但目前還不確定預算和功能要怎麼規劃……"
-              className="min-h-60 w-full resize-none rounded-lg border border-[#d7deea] bg-[#fbfcfe] px-4 py-4 text-base leading-8 text-[#1b2230] outline-none transition placeholder:text-[#9aa6b8] focus:border-[#7d8df1] focus:bg-white focus:ring-4 focus:ring-[#7d8df1]/12"
-            />
+            <div className="space-y-4">
+              <FormSection title="基本資料" description="先記錄這次需求來源，方便後續回頭追蹤。">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <TextField
+                    label="客戶名稱"
+                    value={briefForm.clientName}
+                    onChange={(value) => updateForm("clientName", value)}
+                    placeholder="例如：王小姐 / 某某品牌"
+                  />
+                  <TextField
+                    label="填寫日期"
+                    type="date"
+                    value={briefForm.fillDate}
+                    onChange={(value) => updateForm("fillDate", value)}
+                  />
+                  <SelectField
+                    label="客戶來源"
+                    value={briefForm.source}
+                    options={sourceOptions}
+                    onChange={(value) => updateForm("source", value)}
+                    placeholder="選擇來源"
+                  />
+                  <TextField
+                    label="聯絡方式"
+                    value={briefForm.contact}
+                    onChange={(value) => updateForm("contact", value)}
+                    placeholder="例如：LINE ID / Email / 電話"
+                  />
+                </div>
+              </FormSection>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {examples.map((example) => (
-                <button
-                  key={example.label}
-                  type="button"
-                  onClick={() => handleExampleClick(example.text)}
-                  className="rounded-lg border border-[#d9e0ec] bg-white px-4 py-3 text-left text-sm font-semibold text-[#273044] transition hover:border-[#9ba9d5] hover:bg-[#f7f9fe]"
-                >
-                  {example.label}
-                </button>
-              ))}
+              <FormSection title="專案資訊" description="選擇已知條件，Demo 會把這些資訊納入整理結果。">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <SelectField
+                    label="需求類型"
+                    value={briefForm.selectedType}
+                    options={projectTypeOptions}
+                    onChange={(value) => updateForm("selectedType", value)}
+                  />
+                  <SelectField
+                    label="預算區間"
+                    value={briefForm.budget}
+                    options={budgetOptions}
+                    onChange={(value) => updateForm("budget", value)}
+                  />
+                  <SelectField
+                    label="預計時程"
+                    value={briefForm.timeline}
+                    options={timelineOptions}
+                    onChange={(value) => updateForm("timeline", value)}
+                  />
+                </div>
+              </FormSection>
+
+              <FormSection title="原始需求" description="貼上客戶原話，或先點選範例快速測試不同 brief 結果。">
+                <label htmlFor="requirement" className="sr-only">
+                  貼上客戶需求
+                </label>
+                <textarea
+                  ref={inputRef}
+                  id="requirement"
+                  value={requirement}
+                  onChange={(event) => setRequirement(event.target.value)}
+                  placeholder="例如：我想做一個可以讓客人填資料的網站，最好可以自動算價格，也想要看起來有質感，但目前還不確定預算和功能要怎麼規劃……"
+                  className="min-h-52 w-full resize-none rounded-lg border border-[#d7deea] bg-[#fbfcfe] px-4 py-4 text-base leading-8 text-[#1b2230] outline-none transition placeholder:text-[#9aa6b8] focus:border-[#7d8df1] focus:bg-white focus:ring-4 focus:ring-[#7d8df1]/12"
+                />
+
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  {examples.map((example) => (
+                    <button
+                      key={example.label}
+                      type="button"
+                      onClick={() => handleExampleClick(example.text)}
+                      className="rounded-lg border border-[#d9e0ec] bg-white px-4 py-3 text-left text-sm font-semibold text-[#273044] transition hover:border-[#9ba9d5] hover:bg-[#f7f9fe]"
+                    >
+                      {example.label}
+                    </button>
+                  ))}
+                </div>
+              </FormSection>
             </div>
 
             <button
@@ -514,8 +817,23 @@ export default function Home() {
             </div>
 
             <div className="grid gap-4">
+              <article className="rounded-lg border border-[#9eb0ff]/20 bg-[#9eb0ff]/10 p-5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm font-semibold text-[#c3ccff]">專案 Brief 概覽</p>
+                  <p className="text-xs font-semibold text-white/50">Client snapshot</p>
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <OverviewItem label="客戶名稱" value={briefForm.clientName} />
+                  <OverviewItem label="填寫日期" value={briefForm.fillDate} />
+                  <OverviewItem label="客戶來源" value={briefForm.source} />
+                  <OverviewItem label="需求類型" value={briefForm.selectedType} />
+                  <OverviewItem label="預算區間" value={briefForm.budget} />
+                  <OverviewItem label="預計時程" value={briefForm.timeline} />
+                </div>
+              </article>
+
               <article className="rounded-lg bg-white/[0.075] p-5 ring-1 ring-white/10">
-                <p className="text-sm font-semibold text-[#9eb0ff]">專案摘要</p>
+                <p className="text-sm font-semibold text-[#9eb0ff]">需求摘要</p>
                 <p className="mt-3 text-base leading-8 text-white/84">{result.summary}</p>
               </article>
 
@@ -543,6 +861,20 @@ export default function Home() {
                     </li>
                   ))}
                 </ol>
+              </article>
+
+              <article className="rounded-lg bg-white/[0.075] p-5 ring-1 ring-white/10">
+                <p className="text-sm font-semibold text-[#9eb0ff]">核心功能清單</p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {result.coreFeatures.map((feature) => (
+                    <div
+                      key={feature}
+                      className="rounded-lg border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white/84"
+                    >
+                      {feature}
+                    </div>
+                  ))}
+                </div>
               </article>
 
               <article className="rounded-lg bg-white/[0.075] p-5 ring-1 ring-white/10">
