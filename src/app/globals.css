@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f2f6fb;
-  --foreground: #151821;
-  --muted: #647084;
+  --background: #f7f2eb;
+  --foreground: #1d1b1a;
+  --muted: #786b60;
   --panel: rgba(255, 255, 255, 0.88);
-  --line: rgba(45, 56, 78, 0.12);
+  --line: rgba(92, 72, 52, 0.12);
 }
 
 * {
@@ -31,32 +31,32 @@ textarea {
 
 .page-surface {
   background:
-    radial-gradient(ellipse at 16% 6%, rgba(136, 157, 255, 0.2), transparent 42%),
-    radial-gradient(ellipse at 82% 10%, rgba(138, 216, 206, 0.16), transparent 38%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(234, 241, 250, 0.78)),
-    linear-gradient(180deg, #f1f5fb 0%, #eaf1f8 45%, #f6f4ff 100%);
+    radial-gradient(ellipse at 18% 8%, rgba(214, 176, 124, 0.2), transparent 42%),
+    radial-gradient(ellipse at 82% 12%, rgba(202, 166, 154, 0.15), transparent 38%),
+    linear-gradient(135deg, rgba(255, 252, 247, 0.8), rgba(241, 231, 219, 0.78)),
+    linear-gradient(180deg, #fbf7f1 0%, #f3eadf 48%, #faf5ef 100%);
 }
 
 .soft-grid {
   background-image:
-    linear-gradient(rgba(34, 45, 64, 0.038) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(34, 45, 64, 0.038) 1px, transparent 1px);
+    linear-gradient(rgba(87, 66, 45, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(87, 66, 45, 0.035) 1px, transparent 1px);
   background-size: 40px 40px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.58), transparent 84%);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.5), transparent 84%);
 }
 
 .hero-atmosphere {
   background:
-    linear-gradient(115deg, rgba(112, 132, 255, 0.16), transparent 38%),
-    linear-gradient(250deg, rgba(115, 205, 213, 0.12), transparent 34%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.32), transparent 74%);
+    linear-gradient(115deg, rgba(194, 147, 92, 0.16), transparent 38%),
+    linear-gradient(250deg, rgba(186, 139, 128, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 250, 243, 0.36), transparent 74%);
   filter: blur(0.2px);
 }
 
 .card-shadow {
-  box-shadow: 0 22px 64px rgba(29, 40, 58, 0.11);
+  box-shadow: 0 22px 64px rgba(86, 62, 38, 0.11);
 }
 
 .mini-meter {
-  background: linear-gradient(90deg, #7ca7ff 0%, #8ad8ce 55%, #d7c7ff 100%);
+  background: linear-gradient(90deg, #b98f5d 0%, #d4a373 55%, #e8cfa8 100%);
 }
