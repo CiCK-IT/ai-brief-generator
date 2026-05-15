@@ -2,18 +2,31 @@
 
 import { useMemo, useRef, useState } from "react";
 
+type Maturity = "尚未分析" | "初步想法" | "方向明確" | "適合進一步報價";
+
+type BriefBreakdown = {
+  primaryGoal: string[];
+  requiredFeatures: string[];
+  extendableFeatures: string[];
+};
+
 type BriefResult = {
   summary: string;
   projectType: string;
-  features: string[];
-  maturity: "尚未分析" | "初步想法" | "方向明確" | "適合進一步報價";
+  breakdown: BriefBreakdown;
+  followUpQuestions: string[];
+  maturity: Maturity;
+  maturityNote: string;
   nextStep: string;
 };
 
 type ProjectRule = {
   projectType: string;
   keywords: string[];
-  features: string[];
+  breakdown: BriefBreakdown;
+  followUpQuestions: string[];
+  summaryFocus: string;
+  nextStep: string;
 };
 
 const examples = [
@@ -35,64 +48,100 @@ const examples = [
   },
 ];
 
+const fallbackBreakdown: BriefBreakdown = {
+  primaryGoal: ["釐清專案目的與使用情境", "整理客戶目前真正想解決的問題"],
+  requiredFeatures: ["需求內容補充", "目標使用者確認", "必要功能整理", "預算與時程釐清"],
+  extendableFeatures: ["參考案例收集", "初步 MVP 範圍規劃", "後續提案方向整理"],
+};
+
 const projectRules: ProjectRule[] = [
   {
     projectType: "報價工具",
-    keywords: ["報價", "價格", "金額", "計算", "品項"],
-    features: [
-      "客戶需求填寫",
-      "品項與數量選擇",
-      "價格規則設定",
-      "即時報價摘要",
-      "送出成功提示",
-      "後續聯絡資訊收集",
+    keywords: ["報價", "價格", "金額", "計算", "品項", "數量", "摘要"],
+    summaryFocus:
+      "這份需求適合整理成一個以報價流程為核心的互動工具，重點會放在客戶填寫需求、品項與數量選擇、價格邏輯計算，以及最後產生可供雙方確認的報價摘要。",
+    breakdown: {
+      primaryGoal: ["降低人工估價時間", "讓客戶能先自行填寫需求並取得初步報價方向"],
+      requiredFeatures: ["品項與數量選擇", "價格計算規則", "報價摘要預覽", "客戶聯絡資料填寫"],
+      extendableFeatures: ["稅額與折扣設定", "PDF 報價單匯出", "Email 或 LINE 通知", "報價紀錄管理"],
+    },
+    followUpQuestions: [
+      "報價邏輯是固定價格、區間價格，還是需要人工評估？",
+      "是否需要把客戶填寫資料與報價紀錄儲存起來？",
+      "是否需要稅額、折扣、PDF 報價單或通知功能？",
     ],
+    nextStep: "建議先整理 MVP 報價流程，確認品項、價格規則、稅額與摘要格式，再判斷是否需要資料庫、PDF 匯出與通知功能。",
   },
   {
     projectType: "詢價 / 需求收集頁",
-    keywords: ["表單", "填資料", "詢價", "需求", "聯絡"],
-    features: [
-      "客戶資料填寫",
-      "需求類型選擇",
-      "預算與時程收集",
-      "需求內容補充",
-      "聯絡方式欄位",
-      "送出成功提示",
+    keywords: ["表單", "填資料", "填寫", "詢價", "需求", "聯絡", "預算", "時程"],
+    summaryFocus:
+      "這份需求可整理為一個對外的詢價與需求收集頁，重點是把 LINE 或零散訊息改成有結構的欄位，讓客戶一次提供預算、時程、需求內容與聯絡方式。",
+    breakdown: {
+      primaryGoal: ["集中收集客戶需求", "減少來回追問與資訊遺漏"],
+      requiredFeatures: ["客戶基本資料", "需求類型欄位", "預算與時程收集", "聯絡方式與備註欄位"],
+      extendableFeatures: ["送出後通知", "需求摘要寄送", "資料儲存與匯出", "後續案件追蹤"],
+    },
+    followUpQuestions: [
+      "客戶送出後是否需要 Email 或 LINE 通知？",
+      "需求資料是否要儲存到資料庫，或只需要寄信通知？",
+      "詢價頁需要哪些必填欄位，例如預算、時程、服務類型或附件？",
     ],
+    nextStep: "建議先定義詢價表單欄位與必填資訊，再確認是否需要資料儲存、通知流程與後續管理介面。",
   },
   {
     projectType: "管理工具 / Dashboard",
-    keywords: ["後台", "管理", "狀態", "追蹤", "案件"],
-    features: [
-      "案件列表檢視",
-      "客戶需求紀錄",
-      "案件狀態管理",
-      "報價進度追蹤",
-      "資料篩選與搜尋",
-      "內部備註欄位",
+    keywords: ["後台", "管理", "狀態", "追蹤", "案件", "列表", "Excel"],
+    summaryFocus:
+      "這份需求偏向內部管理工具，核心不是展示頁，而是把客戶需求、案件狀態與報價進度集中管理，減少資料散落在 Excel、聊天紀錄與個人筆記中。",
+    breakdown: {
+      primaryGoal: ["集中管理客戶需求與案件狀態", "讓報價與追蹤流程更清楚"],
+      requiredFeatures: ["客戶列表", "案件狀態管理", "搜尋與篩選", "報價進度追蹤"],
+      extendableFeatures: ["內部備註", "權限角色", "提醒通知", "資料匯出"],
+    },
+    followUpQuestions: [
+      "案件狀態需要有哪些階段，例如新需求、已報價、洽談中或已成交？",
+      "是否需要多人使用與權限管理？",
+      "資料來源會從表單進來，還是需要手動新增與編輯？",
     ],
+    nextStep: "建議先盤點案件欄位、狀態流程與日常查找方式，再決定是否需要登入、權限、通知與資料匯出。",
   },
   {
     projectType: "品牌形象頁 / 作品集頁",
-    keywords: ["品牌", "形象", "網站", "作品集", "服務介紹"],
-    features: [
-      "服務內容介紹",
-      "作品案例展示",
-      "合作流程說明",
-      "品牌視覺呈現",
-      "聯絡表單",
-      "行動版頁面優化",
+    keywords: ["品牌", "形象", "網站", "作品集", "服務介紹", "案例", "合作流程"],
+    summaryFocus:
+      "這份需求適合整理成品牌形象與作品展示頁，重點會放在讓訪客快速理解服務內容、信任感、過往案例與下一步聯絡行動。",
+    breakdown: {
+      primaryGoal: ["建立專業品牌印象", "讓潛在客戶理解服務價值並留下聯絡資訊"],
+      requiredFeatures: ["品牌介紹", "服務內容區塊", "作品案例展示", "合作流程與 CTA"],
+      extendableFeatures: ["常見問題", "客戶推薦", "文章或知識內容", "多頁式作品集架構"],
+    },
+    followUpQuestions: [
+      "是否已有參考網站或品牌風格方向？",
+      "作品案例需要呈現哪些資訊，例如前後對比、成果數據或服務範圍？",
+      "主要 CTA 是預約諮詢、填寫表單，還是導向 LINE 聯絡？",
     ],
+    nextStep: "建議先整理品牌定位、服務項目、作品素材與主要 CTA，再規劃首頁架構與行動版重點內容。",
   },
 ];
 
 const defaultResult: BriefResult = {
   summary:
-    "目前尚未開始整理。貼上客戶需求或點選範例後，系統會在這裡產生初步摘要，協助你判斷專案方向。",
+    "目前尚未開始整理。貼上客戶需求或點選左側範例後，Demo 會把原始描述轉成一張初步 brief，協助你快速判斷專案方向、功能範圍與下一步溝通重點。",
   projectType: "等待需求輸入",
-  features: ["專案摘要", "需求類型判斷", "核心功能清單", "成熟度判斷"],
+  breakdown: {
+    primaryGoal: ["等待客戶需求內容", "準備產生初步專案方向"],
+    requiredFeatures: ["需求摘要", "需求類型判斷", "功能拆解", "成熟度判斷"],
+    extendableFeatures: ["補問問題", "MVP 建議", "提案方向整理"],
+  },
+  followUpQuestions: [
+    "這個專案主要想解決哪個業務問題？",
+    "目前是否已有預算、時程或參考風格？",
+    "哪些功能是第一版一定要有，哪些可以之後再做？",
+  ],
   maturity: "尚未分析",
-  nextStep: "可以先貼上一段客戶描述，再按下「開始整理需求」。",
+  maturityNote: "尚未輸入需求，因此還不能判斷成熟度。",
+  nextStep: "可以先貼上一段客戶描述，或點選範例需求快速試用整理流程。",
 };
 
 const painPoints = [
@@ -137,12 +186,19 @@ const audiences = ["接案者", "設計服務", "顧問服務", "小型品牌", 
 const workflow = ["貼上需求", "系統初步整理", "檢視功能與成熟度", "進入報價或提案討論"];
 
 function findProjectRule(input: string) {
-  return projectRules.find((rule) =>
-    rule.keywords.some((keyword) => input.includes(keyword)),
-  );
+  const scoredRules = projectRules.map((rule, index) => ({
+    rule,
+    index,
+    score: rule.keywords.reduce((total, keyword) => {
+      return input.includes(keyword) ? total + 1 : total;
+    }, 0),
+  }));
+
+  scoredRules.sort((a, b) => b.score - a.score || a.index - b.index);
+  return scoredRules[0]?.score > 0 ? scoredRules[0].rule : undefined;
 }
 
-function getMaturity(input: string): BriefResult["maturity"] {
+function getMaturity(input: string): Maturity {
   const compactLength = input.replace(/\s/g, "").length;
   const hasQuoteReadyInfo = ["預算", "時程", "功能", "參考風格"].some((keyword) =>
     input.includes(keyword),
@@ -153,36 +209,32 @@ function getMaturity(input: string): BriefResult["maturity"] {
   return "方向明確";
 }
 
-function makeSummary(input: string, projectType: string) {
+function makeSummary(input: string, rule?: ProjectRule) {
   const cleanInput = input.trim().replace(/\s+/g, " ");
   const shortened =
-    cleanInput.length > 92 ? `${cleanInput.slice(0, 92)}...` : cleanInput;
+    cleanInput.length > 96 ? `${cleanInput.slice(0, 96)}...` : cleanInput;
 
-  if (projectType === "初步需求，建議進一步釐清") {
-    return `客戶目前描述了「${shortened}」，但專案類型與功能範圍仍不夠明確，建議先補齊目標、使用情境與必要功能。`;
+  if (!rule) {
+    return `客戶目前描述了「${shortened}」。這段內容已經能作為初步需求來源，但專案類型、使用情境與功能優先順序仍需要進一步釐清，建議先補齊目標、預算、時程與必要功能，再進入估價或提案討論。`;
   }
 
-  return `這是一個偏向「${projectType}」的需求。客戶希望將「${shortened}」整理成可執行的頁面或工具，重點會落在資訊收集、功能拆解與後續溝通效率。`;
+  return `${rule.summaryFocus} 目前原始描述為「${shortened}」。從專案 brief 角度來看，下一步應先把第一版必做範圍與可延伸項目分開，避免報價時範圍過大或期待不一致。`;
 }
 
-function makeNextStep(projectType: string, maturity: BriefResult["maturity"]) {
-  if (maturity === "初步想法") {
-    return "建議補充參考網站、希望完成時間與必要功能，再判斷是否可以進入報價討論。";
-  }
-
+function getMaturityNote(maturity: Maturity, projectType: string) {
   if (maturity === "適合進一步報價") {
-    return "需求已相對清楚，可進一步整理成提案或報價方向，並確認交付範圍與優先順序。";
+    return "需求已包含較多關鍵資訊，適合進一步拆成 MVP 範圍、交付項目與報價假設。";
   }
 
-  if (projectType === "報價工具") {
-    return "建議先確認功能範圍、預算區間、報價規則，以及是否需要儲存客戶資料。";
+  if (maturity === "方向明確") {
+    return "方向已初步明確，但仍需確認功能範圍、資料儲存與預算時程。";
   }
 
-  if (projectType === "管理工具 / Dashboard") {
-    return "建議先確認需要追蹤的案件狀態、欄位資料、權限需求與日常使用流程。";
+  if (projectType === "等待需求輸入") {
+    return "尚未輸入需求，因此還不能判斷成熟度。";
   }
 
-  return "建議先確認必要功能、預算區間、時程期待與資料是否需要後續管理。";
+  return "目前仍偏初步想法，建議補充使用情境、必要功能、預算區間與完成時間。";
 }
 
 function analyzeRequirement(input: string): BriefResult {
@@ -192,24 +244,37 @@ function analyzeRequirement(input: string): BriefResult {
     return {
       summary: "尚未偵測到需求內容。請先貼上客戶描述，或點選左側範例快速試用。",
       projectType: "初步需求，建議進一步釐清",
-      features: ["需求內容輸入", "專案目標補充", "功能範圍確認", "預算與時程釐清"],
+      breakdown: fallbackBreakdown,
+      followUpQuestions: [
+        "這個需求主要服務誰，使用者會在什麼情境下使用？",
+        "是否已有預算、時程或參考網站？",
+        "第一版最不能缺少的三個功能是什麼？",
+      ],
       maturity: "初步想法",
-      nextStep: "建議先補上一段客戶原始描述，再進行初步整理。",
+      maturityNote: "目前缺少可分析內容，只能先判斷為初步想法。",
+      nextStep: "建議先補上一段客戶原始描述，再進行初步整理與範圍判斷。",
     };
   }
 
   const matchedRule = findProjectRule(trimmed);
   const projectType = matchedRule?.projectType ?? "初步需求，建議進一步釐清";
-  const features =
-    matchedRule?.features ?? ["需求目標釐清", "使用情境補充", "必要功能整理", "預算與時程確認"];
   const maturity = getMaturity(trimmed);
 
   return {
-    summary: makeSummary(trimmed, projectType),
+    summary: makeSummary(trimmed, matchedRule),
     projectType,
-    features,
+    breakdown: matchedRule?.breakdown ?? fallbackBreakdown,
+    followUpQuestions:
+      matchedRule?.followUpQuestions ?? [
+        "目前最重要的業務目標是什麼？",
+        "是否需要資料儲存、通知或後台管理？",
+        "是否已有參考網站、預算區間或希望完成時間？",
+      ],
     maturity,
-    nextStep: makeNextStep(projectType, maturity),
+    maturityNote: getMaturityNote(maturity, projectType),
+    nextStep:
+      matchedRule?.nextStep ??
+      "建議先整理 MVP 功能清單，再確認是否需要資料庫、通知與後台管理。",
   };
 }
 
@@ -231,6 +296,22 @@ function SectionHeading({
       {description ? (
         <p className="mt-4 text-base leading-8 text-[#647084] md:text-lg">{description}</p>
       ) : null}
+    </div>
+  );
+}
+
+function BreakdownGroup({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.06] p-4">
+      <p className="text-sm font-semibold text-[#b5c3ff]">{title}</p>
+      <ul className="mt-3 space-y-2">
+        {items.map((item) => (
+          <li key={item} className="flex gap-2 text-sm leading-6 text-white/82">
+            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#8ad8ce]" />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -259,6 +340,7 @@ export default function Home() {
 
   return (
     <main className="page-surface min-h-screen overflow-hidden">
+      <div className="hero-atmosphere pointer-events-none absolute inset-x-0 top-0 h-[780px]" />
       <div className="soft-grid pointer-events-none absolute inset-x-0 top-0 h-[720px]" />
 
       <header className="relative mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-6 md:px-10">
@@ -267,7 +349,7 @@ export default function Home() {
         </a>
         <a
           href="#brief-tool"
-          className="rounded-full border border-[#cfd7e6] bg-white/70 px-5 py-2.5 text-sm font-semibold text-[#1e2532] shadow-sm transition hover:border-[#9ba9d5] hover:bg-white"
+          className="rounded-full border border-[#c6d2e8] bg-white/72 px-5 py-2.5 text-sm font-semibold text-[#1e2532] shadow-sm backdrop-blur transition hover:border-[#9ba9d5] hover:bg-white"
         >
           開始整理需求
         </a>
@@ -285,24 +367,24 @@ export default function Home() {
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <a
               href="#brief-tool"
-              className="inline-flex items-center justify-center rounded-full bg-[#151821] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(21,24,33,0.18)] transition hover:bg-[#2b3242]"
+              className="inline-flex items-center justify-center rounded-full bg-[#151821] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(21,24,33,0.2)] transition hover:bg-[#2b3242]"
             >
               開始整理需求
             </a>
             <a
               href="#outcomes"
-              className="inline-flex items-center justify-center rounded-full border border-[#cfd7e6] bg-white/70 px-7 py-3.5 text-sm font-semibold text-[#273044] transition hover:bg-white"
+              className="inline-flex items-center justify-center rounded-full border border-[#cfd7e6] bg-white/70 px-7 py-3.5 text-sm font-semibold text-[#273044] backdrop-blur transition hover:bg-white"
             >
               查看整理內容
             </a>
           </div>
         </div>
 
-        <div className="card-shadow rounded-lg border border-white/70 bg-white/86 p-4 backdrop-blur md:p-6">
-          <div className="rounded-lg border border-[#dbe2ed] bg-[#f9fbfd] p-4">
-            <div className="flex items-center justify-between border-b border-[#e3e9f2] pb-4">
+        <div className="card-shadow rounded-lg border border-white/76 bg-white/72 p-4 backdrop-blur-xl md:p-6">
+          <div className="rounded-lg border border-[#cdd8e8] bg-[#f7faff]/86 p-4">
+            <div className="flex items-center justify-between border-b border-[#dce5f2] pb-4">
               <div>
-                <p className="text-xs font-semibold text-[#6171d9]">AI 分析預覽</p>
+                <p className="text-xs font-semibold text-[#6171d9]">AI Brief Report</p>
                 <p className="mt-1 text-lg font-semibold text-[#151821]">客戶需求整理中</p>
               </div>
               <div className="rounded-full bg-[#151821] px-3 py-1 text-xs font-semibold text-white">
@@ -311,20 +393,20 @@ export default function Home() {
             </div>
 
             <div className="space-y-4 pt-5">
-              <div className="rounded-lg bg-white p-4 shadow-sm">
-                <p className="text-xs font-semibold text-[#6171d9]">需求摘要</p>
+              <div className="rounded-lg bg-white/88 p-4 shadow-sm">
+                <p className="text-xs font-semibold text-[#6171d9]">專案摘要</p>
                 <p className="mt-2 text-sm leading-6 text-[#596579]">
-                  將詢價、功能想法與品牌期待整理成一段可討論的專案方向。
+                  將詢價、功能想法與品牌期待整理成一張可討論的 brief。
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                {["客戶資料填寫", "功能清單", "需求成熟度", "下一步建議"].map((item) => (
-                  <div key={item} className="rounded-lg border border-[#e2e8f2] bg-white px-3 py-3">
+                {["主要目標", "必要功能", "補問問題", "下一步建議"].map((item) => (
+                  <div key={item} className="rounded-lg border border-[#e2e8f2] bg-white/86 px-3 py-3">
                     <p className="text-sm font-semibold text-[#273044]">{item}</p>
                   </div>
                 ))}
               </div>
-              <div className="rounded-lg bg-white p-4 shadow-sm">
+              <div className="rounded-lg bg-white/88 p-4 shadow-sm">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-xs font-semibold text-[#6171d9]">需求成熟度</p>
                   <p className="text-xs font-semibold text-[#596579]">方向明確</p>
@@ -344,7 +426,7 @@ export default function Home() {
           {painPoints.map((point) => (
             <article
               key={point.title}
-              className="card-shadow rounded-lg border border-white/70 bg-white/86 p-6"
+              className="card-shadow rounded-lg border border-white/70 bg-white/82 p-6 backdrop-blur"
             >
               <h3 className="text-lg font-semibold text-[#151821]">{point.title}</h3>
               <p className="mt-4 text-sm leading-7 text-[#647084]">{point.body}</p>
@@ -360,12 +442,22 @@ export default function Home() {
           description="第一版以關鍵字規則模擬 AI 整理流程，讓作品集先完整呈現使用情境與互動價值。"
         />
 
-        <div className="mb-5 rounded-lg border border-[#cbd8ef] bg-[#eef4ff] px-5 py-4 text-sm leading-7 text-[#33415f]">
-          Demo 版本會根據輸入內容進行初步整理，未來可串接 AI API，提供更完整的需求分析。
+        <div className="mb-5 rounded-lg border border-[#cfd8f6] bg-white/80 p-5 shadow-[0_16px_42px_rgba(67,84,130,0.09)] backdrop-blur">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-[#6171d9]">Demo Mode</p>
+              <p className="mt-2 text-sm leading-7 text-[#43506a]">
+                Demo 版本會根據輸入內容進行初步整理，未來可串接 AI API，提供更完整的需求分析。
+              </p>
+            </div>
+            <div className="rounded-full border border-[#d9e2f3] bg-[#f7f9ff] px-4 py-2 text-xs font-semibold text-[#6171d9]">
+              規則模擬中
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="card-shadow rounded-lg border border-white/70 bg-white/90 p-5 md:p-6">
+          <div className="card-shadow rounded-lg border border-white/70 bg-white/88 p-5 backdrop-blur md:p-6">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-[#6171d9]">需求輸入區</p>
@@ -410,45 +502,52 @@ export default function Home() {
             </button>
           </div>
 
-          <div className="card-shadow rounded-lg border border-white/70 bg-[#151821] p-5 text-white md:p-6">
+          <div className="card-shadow rounded-lg border border-white/14 bg-[#111722] p-5 text-white shadow-[0_30px_80px_rgba(15,22,34,0.24)] md:p-6">
             <div className="mb-5 flex flex-col gap-3 border-b border-white/12 pb-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-semibold text-[#9eb0ff]">AI 整理結果區</p>
-                <h2 className="mt-2 text-2xl font-semibold">整理結果</h2>
+                <p className="text-sm font-semibold text-[#9eb0ff]">AI Brief 報告卡</p>
+                <h2 className="mt-2 text-2xl font-semibold">初步專案 Brief</h2>
               </div>
-              <div className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/78">
-                {result.maturity}
+              <div className="rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold text-white/82">
+                {result.projectType}
               </div>
             </div>
 
             <div className="grid gap-4">
-              <article className="rounded-lg bg-white/[0.07] p-5 ring-1 ring-white/10">
-                <p className="text-sm font-semibold text-[#9eb0ff]">A. 需求摘要</p>
-                <p className="mt-3 text-base leading-8 text-white/82">{result.summary}</p>
+              <article className="rounded-lg bg-white/[0.075] p-5 ring-1 ring-white/10">
+                <p className="text-sm font-semibold text-[#9eb0ff]">專案摘要</p>
+                <p className="mt-3 text-base leading-8 text-white/84">{result.summary}</p>
               </article>
 
-              <article className="rounded-lg bg-white/[0.07] p-5 ring-1 ring-white/10">
-                <p className="text-sm font-semibold text-[#9eb0ff]">B. 需求類型</p>
-                <p className="mt-3 text-xl font-semibold text-white">{result.projectType}</p>
-              </article>
-
-              <article className="rounded-lg bg-white/[0.07] p-5 ring-1 ring-white/10">
-                <p className="text-sm font-semibold text-[#9eb0ff]">C. 核心功能清單</p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {result.features.map((feature) => (
-                    <div
-                      key={feature}
-                      className="rounded-lg border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white/86"
-                    >
-                      {feature}
-                    </div>
-                  ))}
+              <article className="rounded-lg bg-white/[0.075] p-5 ring-1 ring-white/10">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm font-semibold text-[#9eb0ff]">需求拆解</p>
+                  <p className="text-xs font-semibold text-white/56">Brief structure</p>
+                </div>
+                <div className="mt-4 grid gap-3 xl:grid-cols-3">
+                  <BreakdownGroup title="主要目標" items={result.breakdown.primaryGoal} />
+                  <BreakdownGroup title="必要功能" items={result.breakdown.requiredFeatures} />
+                  <BreakdownGroup title="可延伸功能" items={result.breakdown.extendableFeatures} />
                 </div>
               </article>
 
-              <article className="rounded-lg bg-white/[0.07] p-5 ring-1 ring-white/10">
+              <article className="rounded-lg bg-white/[0.075] p-5 ring-1 ring-white/10">
+                <p className="text-sm font-semibold text-[#9eb0ff]">建議補問問題</p>
+                <ol className="mt-4 space-y-3">
+                  {result.followUpQuestions.map((question, index) => (
+                    <li key={question} className="flex gap-3 text-sm leading-7 text-white/84">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-[#b5c3ff]">
+                        {index + 1}
+                      </span>
+                      <span>{question}</span>
+                    </li>
+                  ))}
+                </ol>
+              </article>
+
+              <article className="rounded-lg bg-white/[0.075] p-5 ring-1 ring-white/10">
                 <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm font-semibold text-[#9eb0ff]">D. 需求成熟度</p>
+                  <p className="text-sm font-semibold text-[#9eb0ff]">需求成熟度</p>
                   <p className="text-sm font-semibold text-white">{result.maturity}</p>
                 </div>
                 <div className="mt-4 h-2 rounded-full bg-white/12">
@@ -457,11 +556,12 @@ export default function Home() {
                     style={{ width: maturityWidth }}
                   />
                 </div>
+                <p className="mt-4 text-sm leading-7 text-white/76">{result.maturityNote}</p>
               </article>
 
-              <article className="rounded-lg bg-white/[0.07] p-5 ring-1 ring-white/10">
-                <p className="text-sm font-semibold text-[#9eb0ff]">E. 下一步建議</p>
-                <p className="mt-3 text-base leading-8 text-white/82">{result.nextStep}</p>
+              <article className="rounded-lg border border-[#8ad8ce]/20 bg-[#8ad8ce]/10 p-5">
+                <p className="text-sm font-semibold text-[#9fe4dc]">下一步建議</p>
+                <p className="mt-3 text-base leading-8 text-white/86">{result.nextStep}</p>
               </article>
             </div>
           </div>

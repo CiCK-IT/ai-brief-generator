@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f8fb;
+  --background: #f2f6fb;
   --foreground: #151821;
   --muted: #647084;
   --panel: rgba(255, 255, 255, 0.88);
@@ -31,20 +31,30 @@ textarea {
 
 .page-surface {
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(237, 243, 249, 0.7)),
-    linear-gradient(180deg, #f9fbfd 0%, #f1f5fa 54%, #f8f6ff 100%);
+    radial-gradient(ellipse at 16% 6%, rgba(136, 157, 255, 0.2), transparent 42%),
+    radial-gradient(ellipse at 82% 10%, rgba(138, 216, 206, 0.16), transparent 38%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(234, 241, 250, 0.78)),
+    linear-gradient(180deg, #f1f5fb 0%, #eaf1f8 45%, #f6f4ff 100%);
 }
 
 .soft-grid {
   background-image:
-    linear-gradient(rgba(34, 45, 64, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(34, 45, 64, 0.05) 1px, transparent 1px);
+    linear-gradient(rgba(34, 45, 64, 0.038) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 45, 64, 0.038) 1px, transparent 1px);
   background-size: 40px 40px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.78), transparent 82%);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.58), transparent 84%);
+}
+
+.hero-atmosphere {
+  background:
+    linear-gradient(115deg, rgba(112, 132, 255, 0.16), transparent 38%),
+    linear-gradient(250deg, rgba(115, 205, 213, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32), transparent 74%);
+  filter: blur(0.2px);
 }
 
 .card-shadow {
-  box-shadow: 0 20px 60px rgba(29, 40, 58, 0.09);
+  box-shadow: 0 22px 64px rgba(29, 40, 58, 0.11);
 }
 
 .mini-meter {
