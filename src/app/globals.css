@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f6f8fb;
+  --foreground: #151821;
+  --muted: #647084;
+  --panel: rgba(255, 255, 255, 0.88);
+  --line: rgba(45, 56, 78, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Inter", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei",
+    Arial, sans-serif;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+.page-surface {
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(237, 243, 249, 0.7)),
+    linear-gradient(180deg, #f9fbfd 0%, #f1f5fa 54%, #f8f6ff 100%);
+}
+
+.soft-grid {
+  background-image:
+    linear-gradient(rgba(34, 45, 64, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 45, 64, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.78), transparent 82%);
+}
+
+.card-shadow {
+  box-shadow: 0 20px 60px rgba(29, 40, 58, 0.09);
+}
+
+.mini-meter {
+  background: linear-gradient(90deg, #7ca7ff 0%, #8ad8ce 55%, #d7c7ff 100%);
+}
