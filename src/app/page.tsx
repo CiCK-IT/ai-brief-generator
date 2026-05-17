@@ -15,9 +15,11 @@ type EventForm = {
   guestCount: string;
   budget: string;
   purpose: string;
-  stylePreference: string;
+  stylePreferences: string[];
   services: string[];
 };
+
+type ScalarEventFormKey = Exclude<keyof EventForm, "services" | "stylePreferences">;
 
 type EventBreakdown = {
   goals: string[];
@@ -103,7 +105,7 @@ const defaultForm: EventForm = {
   guestCount: "",
   budget: "尚未確定",
   purpose: "",
-  stylePreference: "尚未確定",
+  stylePreferences: ["尚未確定"],
   services: [],
 };
 
@@ -116,7 +118,7 @@ const examples: ExampleBrief[] = [
       guestCount: "約 80 人",
       budget: "15–30 萬",
       purpose: "婚禮儀式與賓客接待",
-      stylePreference: "浪漫典雅",
+      stylePreferences: ["浪漫典雅"],
       services: ["活動企劃", "流程規劃", "場地佈置", "攝影 / 錄影"],
     },
   },
@@ -128,7 +130,7 @@ const examples: ExampleBrief[] = [
       guestCount: "約 50 人",
       budget: "8–15 萬",
       purpose: "新品曝光與品牌體驗",
-      stylePreference: "品牌專業",
+      stylePreferences: ["品牌專業"],
       services: ["活動企劃", "流程規劃", "場地佈置", "視覺設計", "現場執行"],
     },
   },
@@ -140,7 +142,7 @@ const examples: ExampleBrief[] = [
       guestCount: "約 120 人",
       budget: "尚未確定",
       purpose: "員工交流與團隊凝聚",
-      stylePreference: "簡約質感",
+      stylePreferences: ["簡約質感"],
       services: ["活動企劃", "流程規劃", "主持安排", "現場執行"],
     },
   },
@@ -152,7 +154,7 @@ const examples: ExampleBrief[] = [
       guestCount: "約 30 人",
       budget: "3–8 萬",
       purpose: "生日慶祝與朋友聚會",
-      stylePreference: "活潑派對",
+      stylePreferences: ["活潑派對"],
       services: ["流程規劃", "場地佈置", "攝影 / 錄影", "現場執行"],
     },
   },
@@ -373,6 +375,31 @@ function getSelectedServicesLabel(services: string[]) {
   return services.length > 0 ? services.join("、") : "尚未選擇";
 }
 
+function getSelectedStyles(styles: string[]) {
+  return styles.filter((style) => style !== "尚未確定");
+}
+
+function getSelectedStylesLabel(styles: string[]) {
+  const selectedStyles = getSelectedStyles(styles);
+  return selectedStyles.length > 0 ? selectedStyles.join("、") : "尚未確定";
+}
+
+function getGuestScaleText(guestCount: string) {
+  const rawCount = guestCount.trim();
+
+  if (!rawCount) {
+    return "目前尚未明確提供預估人數";
+  }
+
+  const normalizedCount =
+    rawCount
+      .replace(/^(約|大約|預計|預估)\s*/u, "")
+      .replace(/位來賓|位|人|名|規模|左右/g, "")
+      .trim() || rawCount;
+
+  return `約 ${normalizedCount} 位來賓規模`;
+}
+
 function findRuleByType(eventType: string) {
   return eventRules.find((rule) => rule.eventType === eventType);
 }
@@ -412,7 +439,7 @@ function getMaturity(input: string, form: EventForm): Maturity {
     form.guestCount,
     form.budget !== "尚未確定" ? form.budget : "",
     form.purpose,
-    form.stylePreference !== "尚未確定" ? form.stylePreference : "",
+    getSelectedStyles(form.stylePreferences).length > 0 ? "styles" : "",
     form.services.length > 0 ? "services" : "",
   ].filter(Boolean).length;
 
@@ -497,7 +524,7 @@ function getKnownInfo(form: EventForm) {
     form.guestCount.trim() ? "預估人數" : "",
     form.budget !== "尚未確定" ? "預算區間" : "",
     form.services.length > 0 ? "主要服務項目" : "",
-    form.stylePreference !== "尚未確定" ? "風格偏好" : "",
+    getSelectedStyles(form.stylePreferences).length > 0 ? "風格偏好" : "",
   ].filter(Boolean);
 }
 
@@ -508,7 +535,7 @@ function getMissingInfo(form: EventForm) {
     form.guestCount.trim() ? "" : "預估人數",
     form.budget !== "尚未確定" ? "" : "預算範圍",
     form.services.length > 0 ? "" : "必要服務項目",
-    form.stylePreference !== "尚未確定" ? "" : "風格參考",
+    getSelectedStyles(form.stylePreferences).length > 0 ? "" : "風格參考",
   ].filter(Boolean);
 }
 
@@ -528,7 +555,7 @@ function getServiceFocus(services: string[]) {
 function makeSummary(input: string, form: EventForm, rule?: EventRule) {
   const eventType = form.eventType || rule?.eventType || "活動企劃";
   const profile = getEventProfile(eventType);
-  const guestText = form.guestCount.trim() ? `${form.guestCount.trim()}規模` : "人數尚待確認";
+  const guestText = getGuestScaleText(form.guestCount);
   const goal = form.purpose.trim() || profile.defaultGoal;
   const knownInfo = getKnownInfo(form);
   const missingInfo = getMissingInfo(form);
@@ -626,7 +653,7 @@ function getFollowUpQuestions(form: EventForm, rule?: EventRule) {
     questions.push("是否已有品牌識別、主視覺、指定字體色系或必須露出的活動資訊？");
   }
 
-  if (form.stylePreference === "尚未確定") {
+  if (getSelectedStyles(form.stylePreferences).length === 0) {
     questions.push("是否已有喜歡的風格圖片、色系、花藝、材質或參考案例？");
   }
 
@@ -706,11 +733,58 @@ function getDynamicMainNeeds(form: EventForm, rule?: EventRule) {
   return Array.from(new Set(needs.length > 0 ? needs : (rule?.breakdown.mainNeeds ?? fallbackBreakdown.mainNeeds))).slice(0, 5);
 }
 
+function getStyleSuggestions(input: string, form: EventForm, rule?: EventRule) {
+  const selectedStyles = getSelectedStyles(form.stylePreferences);
+  const eventType = form.eventType || rule?.eventType || "";
+  const context = `${eventType} ${form.purpose} ${input} ${selectedStyles.join("、")}`;
+  const suggestions = [
+    (eventType === "新品發表會" || eventType === "品牌活動") &&
+    (selectedStyles.includes("華麗奢華") || selectedStyles.includes("品牌專業") || context.includes("品牌"))
+      ? "建議統一背板、邀請函與現場指標設計，讓品牌視覺在現場保持一致。"
+      : "",
+    (eventType === "新品發表會" || eventType === "品牌活動") &&
+    (selectedStyles.includes("華麗奢華") || selectedStyles.includes("品牌專業") || context.includes("新品"))
+      ? "可規劃品牌拍照區與產品展示焦點，讓來賓更容易理解活動主軸。"
+      : "",
+    eventType === "婚禮 / 婚宴" && selectedStyles.includes("浪漫典雅")
+      ? "建議補充儀式流程、賓客動線與入場節奏，讓浪漫氛圍能延伸到整場體驗。"
+      : "",
+    eventType === "婚禮 / 婚宴" && selectedStyles.includes("浪漫典雅")
+      ? "可整理主視覺色系、花藝、桌面佈置與拍照區需求，方便後續估價。"
+      : "",
+    (eventType === "生日派對" || eventType === "私人聚會") && selectedStyles.includes("活潑派對")
+      ? "建議確認互動橋段、音樂氛圍與拍照區配置，讓現場節奏更有記憶點。"
+      : "",
+    (eventType === "生日派對" || eventType === "私人聚會") && selectedStyles.includes("活潑派對")
+      ? "可補充餐飲形式、活動動線與主要來賓組成，避免現場安排過度鬆散。"
+      : "",
+    form.services.includes("場地佈置")
+      ? "因為有場地佈置需求，建議補充參考圖片、色系、背板尺寸與拍照區位置。"
+      : "",
+    form.services.includes("視覺設計")
+      ? "若需要視覺設計，可先整理品牌識別、主視覺素材與必須露出的活動資訊。"
+      : "",
+    form.services.includes("主持安排")
+      ? "若有主持安排，建議同步確認主持語氣、流程長度與互動橋段。"
+      : "",
+  ].filter(Boolean);
+
+  const fallbackSuggestions = [
+    "建議先整理 2–3 張風格參考圖，確認色系、材質與現場氛圍。",
+    "可把必要服務與可延伸服務分開，讓企劃與報價更容易收斂。",
+    "下一步可補充場地條件與現場動線，避免風格方向無法落地執行。",
+  ];
+
+  return Array.from(new Set(suggestions.length > 0 ? suggestions : fallbackSuggestions)).slice(0, 3);
+}
+
 function getStyleBreakdown(input: string, form: EventForm, rule?: EventRule) {
-  if (form.stylePreference !== "尚未確定") {
+  const selectedStyles = getSelectedStyles(form.stylePreferences);
+
+  if (selectedStyles.length > 0) {
     return {
-      styleDirection: [form.stylePreference],
-      styleSuggestions: [],
+      styleDirection: selectedStyles,
+      styleSuggestions: getStyleSuggestions(input, form, rule),
     };
   }
 
@@ -724,7 +798,7 @@ function getStyleBreakdown(input: string, form: EventForm, rule?: EventRule) {
 
   return {
     styleDirection: inferred.length > 0 ? inferred : ["尚未確定，建議先收集 2–3 張參考圖片"],
-    styleSuggestions: [],
+    styleSuggestions: getStyleSuggestions(input, form, rule),
   };
 }
 
@@ -892,8 +966,26 @@ export default function Home() {
     return "34%";
   }, [result.maturity]);
 
-  const updateForm = (key: keyof EventForm, value: string) => {
+  const updateForm = (key: ScalarEventFormKey, value: string) => {
     setEventForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const toggleStyle = (style: string) => {
+    setEventForm((current) => {
+      if (style === "尚未確定") {
+        return { ...current, stylePreferences: ["尚未確定"] };
+      }
+
+      const selectedStyles = getSelectedStyles(current.stylePreferences);
+      const nextStyles = selectedStyles.includes(style)
+        ? selectedStyles.filter((item) => item !== style)
+        : [...selectedStyles, style];
+
+      return {
+        ...current,
+        stylePreferences: nextStyles.length > 0 ? nextStyles : ["尚未確定"],
+      };
+    });
   };
 
   const toggleService = (service: string) => {
@@ -1121,12 +1213,33 @@ export default function Home() {
                     placeholder="例如：婚禮儀式 / 新品曝光 / 員工交流"
                   />
                   <div className="sm:col-span-2">
-                    <SelectField
-                      label="風格偏好"
-                      value={eventForm.stylePreference}
-                      options={styleOptions}
-                      onChange={(value) => updateForm("stylePreference", value)}
-                    />
+                    <div>
+                      <p className="text-sm font-semibold text-[#4e453e]">風格偏好</p>
+                      <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                        {styleOptions.map((style) => {
+                          const isSelected = eventForm.stylePreferences.includes(style);
+
+                          return (
+                            <label
+                              key={style}
+                              className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold transition ${
+                                isSelected
+                                  ? "border-[#b98f5d] bg-[#fff7ed] text-[#3c3128] shadow-[0_10px_26px_rgba(122,91,55,0.1)]"
+                                  : "border-[#e3d7c9] bg-white/80 text-[#4e453e] hover:border-[#c4a57a] hover:bg-white"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleStyle(style)}
+                                className="h-4 w-4 accent-[#a17b4b]"
+                              />
+                              <span>{style}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </FormSection>
@@ -1211,7 +1324,7 @@ export default function Home() {
                   <OverviewItem label="活動地點" value={eventForm.location} />
                   <OverviewItem label="預估人數" value={eventForm.guestCount} />
                   <OverviewItem label="預算區間" value={eventForm.budget} />
-                  <OverviewItem label="風格偏好" value={eventForm.stylePreference} />
+                  <OverviewItem label="風格偏好" value={getSelectedStylesLabel(eventForm.stylePreferences)} />
                   <OverviewItem label="服務項目" value={getSelectedServicesLabel(eventForm.services)} />
                 </div>
               </article>
@@ -1226,12 +1339,12 @@ export default function Home() {
                   <p className="text-sm font-semibold text-[#e6c894]">B. 活動重點拆解</p>
                   <p className="text-xs font-semibold text-white/56">Planning structure</p>
                 </div>
-                <div className="mt-4 grid gap-3 xl:grid-cols-4">
+                <div className="mt-4 grid gap-3 lg:grid-cols-2">
                   <BreakdownGroup title="活動目標" items={result.breakdown.goals} />
                   <BreakdownGroup title="主要需求" items={result.breakdown.mainNeeds} />
                   <BreakdownGroup title="服務項目" items={result.breakdown.services} />
                   <BreakdownGroup
-                    title={eventForm.stylePreference !== "尚未確定" ? "已選風格" : "風格方向"}
+                    title={getSelectedStyles(eventForm.stylePreferences).length > 0 ? "已選風格" : "風格方向"}
                     items={result.breakdown.styleDirection}
                   />
                   {result.breakdown.styleSuggestions && result.breakdown.styleSuggestions.length > 0 ? (
