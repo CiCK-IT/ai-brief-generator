@@ -322,11 +322,11 @@ const defaultResult: EventBriefResult = {
     styleSuggestions: ["可先選擇 1–2 個風格偏好，或保留尚未確定。"],
   },
   budgetTimelineAssessment: "填寫活動日期、預算與服務項目後，會產生初步判斷。",
-  followUpQuestions: [
+  followUpQuestions: sanitizeQuestions([
     "活動日期與場地是否已確認？",
     "預算是否包含場地、餐飲、佈置與攝影？",
     "是否需要完整企劃流程，或只需要單項服務？",
-  ],
+  ]),
   maturity: "初步想法",
   maturityNote: "尚未開始分析，先填寫活動資訊或點選範例即可產生 Brief。",
   nextStep: "填寫左側欄位，或點選範例快速產生活動 Brief。",
@@ -407,7 +407,11 @@ function getGuestScaleText(guestCount: string) {
 }
 
 function cleanQuestionText(question: string) {
-  return question.replace(/^\s*(?:[0-9０-９]+[\s.、．)]*)+/u, "").trim();
+  return question.replace(/^\s*(?:[0-9０-９]+[\s\u00a0.、．)]*)+/u, "").trim();
+}
+
+function sanitizeQuestions(questions: string[]) {
+  return Array.from(new Set(questions.map(cleanQuestionText).filter(Boolean)));
 }
 
 function findRuleByType(eventType: string) {
@@ -751,7 +755,7 @@ function getFollowUpQuestions(form: EventForm, rule?: EventRule) {
     questions.push(...ruleQuestions);
   }
 
-  return Array.from(new Set(questions.map(cleanQuestionText).filter(Boolean))).slice(0, 5);
+  return sanitizeQuestions(questions).slice(0, 5);
 }
 
 function getMaturityNote(maturity: Maturity, form: EventForm) {
@@ -1068,6 +1072,10 @@ export default function Home() {
     if (result.maturity === "方向明確") return "66%";
     return "34%";
   }, [result.maturity]);
+  const displayFollowUpQuestions = useMemo(
+    () => sanitizeQuestions(result.followUpQuestions),
+    [result.followUpQuestions],
+  );
 
   const updateForm = (key: ScalarEventFormKey, value: string) => {
     setEventForm((current) => ({ ...current, [key]: value }));
@@ -1461,15 +1469,11 @@ export default function Home() {
               <article className="rounded-lg bg-white/[0.075] p-5 ring-1 ring-white/10">
                 <p className="text-sm font-semibold text-[#e6c894]">D. 建議補問問題</p>
                 <ol className="mt-4 list-decimal space-y-3 pl-5">
-                  {result.followUpQuestions.map((question) => {
-                    const cleanQuestion = cleanQuestionText(question);
-
-                    return (
-                      <li key={cleanQuestion} className="pl-2 text-sm leading-7 text-white/84 marker:text-[#e6c894]">
-                        <span>{cleanQuestion}</span>
-                      </li>
-                    );
-                  })}
+                  {displayFollowUpQuestions.map((question) => (
+                    <li key={question} className="pl-2 text-sm leading-7 text-white/84 marker:text-[#e6c894]">
+                      <span>{question}</span>
+                    </li>
+                  ))}
                 </ol>
               </article>
 
