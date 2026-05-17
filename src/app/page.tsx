@@ -388,7 +388,7 @@ function getGuestScaleText(guestCount: string) {
   const rawCount = guestCount.trim();
 
   if (!rawCount) {
-    return "目前尚未明確提供預估人數";
+    return "目前尚未提供預估人數";
   }
 
   const normalizedCount =
@@ -398,6 +398,10 @@ function getGuestScaleText(guestCount: string) {
       .trim() || rawCount;
 
   return `約 ${normalizedCount} 位來賓規模`;
+}
+
+function cleanQuestionText(question: string) {
+  return question.replace(/^\s*(?:\d+[\s.、．)]*)+/u, "").trim();
 }
 
 function findRuleByType(eventType: string) {
@@ -552,27 +556,104 @@ function getServiceFocus(services: string[]) {
   return focus.length > 0 ? focus.slice(0, 3) : ["必要服務範圍與執行深度"];
 }
 
+function getEventTypeBreakdown(eventType: string) {
+  if (eventType === "婚禮 / 婚宴") {
+    return {
+      goals: ["安排清楚的儀式與宴客流程", "讓賓客體驗、場地動線與風格氛圍保持一致", "保留新人故事與重要時刻的影像紀錄"],
+      mainNeeds: ["確認儀式流程、進退場與宴客節奏", "整理場地動線、佈置範圍、花藝與拍照區", "確認攝影 / 錄影、主持與賓客接待方式"],
+      services: ["活動企劃", "流程規劃", "場地佈置", "攝影 / 錄影"],
+      summaryAngle: "這類活動不只是佈置或流程安排，而是需要同時照顧儀式感、賓客動線、現場氛圍與影像紀錄。",
+    };
+  }
+
+  if (eventType === "品牌活動") {
+    return {
+      goals: ["放大品牌曝光與活動記憶點", "把產品或品牌訊息轉成可體驗的現場內容", "讓來賓容易拍照、分享並理解活動主軸"],
+      mainNeeds: ["確認品牌露出位置、拍照區與主視覺規範", "規劃產品展示、來賓體驗與動線節奏", "整理視覺設計、佈置與現場執行範圍"],
+      services: ["活動企劃", "視覺設計", "場地佈置", "現場執行"],
+      summaryAngle: "這類活動重點不只是辦一場聚會，而是要兼顧品牌展示、來賓體驗、拍照傳播與現場動線。",
+    };
+  }
+
+  if (eventType === "企業活動") {
+    return {
+      goals: ["讓活動流程穩定且容易控場", "提升員工參與感並降低現場溝通成本", "協助內部窗口掌握流程、主持與執行節點"],
+      mainNeeds: ["確認流程長度、人數控管與主持安排", "規劃活動節奏、互動橋段與內部溝通分工", "整理場地設備、報到動線與現場執行人力"],
+      services: ["活動企劃", "流程規劃", "主持安排", "現場執行"],
+      summaryAngle: "這類活動的核心是流程控場與內部協作，需要先把主持橋段、人數控管、活動節奏與窗口分工整理清楚。",
+    };
+  }
+
+  if (eventType === "生日派對" || eventType === "私人聚會") {
+    return {
+      goals: ["營造符合主角與賓客關係的聚會氛圍", "安排自然好互動的橋段與拍照場景", "讓餐飲、動線與佈置維持輕鬆但有質感"],
+      mainNeeds: ["確認派對主題、互動橋段與音樂氛圍", "整理餐飲形式、座位或站立動線", "規劃拍照區、佈置重點與現場執行方式"],
+      services: ["流程規劃", "場地佈置", "餐飲規劃", "現場執行"],
+      summaryAngle: "這類活動重點在氛圍與賓客互動，不需要過度複雜，但要先把餐飲、佈置、拍照區與流程節奏安排好。",
+    };
+  }
+
+  if (eventType === "展覽 / 市集") {
+    return {
+      goals: ["提高展區辨識度與參觀效率", "讓人流、攤位配置與現場執行更有秩序", "把品牌或活動資訊清楚轉成現場視覺"],
+      mainNeeds: ["確認攤位配置、參觀動線與展區尺寸", "整理視覺識別、指標、背板與展示物料", "規劃人流管理、報到導引與現場執行分工"],
+      services: ["活動企劃", "視覺設計", "場地佈置", "現場執行"],
+      summaryAngle: "這類活動需要先把攤位配置、參觀動線、視覺識別與現場人流管理整理清楚，避免執行時資訊分散。",
+    };
+  }
+
+  if (eventType === "新品發表會") {
+    return {
+      goals: ["清楚呈現產品亮點與品牌定位", "建立媒體 / 來賓容易理解與拍攝的活動體驗", "讓展示動線與流程安排支撐曝光目標"],
+      mainNeeds: ["確認產品展示方式、拍照區與展示動線", "規劃發表流程、媒體 / KOL 接待與簡報節奏", "整理品牌視覺、背板、指標與現場執行範圍"],
+      services: ["活動企劃", "流程規劃", "視覺設計", "現場執行"],
+      summaryAngle: "這類活動不只是發布訊息，而是需要把產品亮點、品牌視覺、媒體 / 來賓體驗與流程節奏整合成一個清楚的發表場景。",
+    };
+  }
+
+  return {
+    goals: fallbackBreakdown.goals,
+    mainNeeds: fallbackBreakdown.mainNeeds,
+    services: fallbackBreakdown.services,
+    summaryAngle: "目前活動類型仍偏初步，建議先釐清活動本質、服務範圍與現場執行條件。",
+  };
+}
+
+function getSummaryOpening(form: EventForm, eventType: string) {
+  if (!form.guestCount.trim()) {
+    return `這是一場${eventType}需求，目前尚未提供預估人數`;
+  }
+
+  return `這是一場${getGuestScaleText(form.guestCount)}的${eventType}需求`;
+}
+
 function makeSummary(input: string, form: EventForm, rule?: EventRule) {
   const eventType = form.eventType || rule?.eventType || "活動企劃";
   const profile = getEventProfile(eventType);
-  const guestText = getGuestScaleText(form.guestCount);
+  const typeBreakdown = getEventTypeBreakdown(eventType);
   const goal = form.purpose.trim() || profile.defaultGoal;
+  const selectedServices =
+    form.services.length > 0 ? form.services : (rule?.breakdown.services ?? typeBreakdown.services);
   const knownInfo = getKnownInfo(form);
   const missingInfo = getMissingInfo(form);
   const knownText =
     knownInfo.length > 0
-      ? `目前已具備${knownInfo.join("、")}，需求成熟度已有初步基礎`
+      ? `目前已明確的資訊包含${knownInfo.join("、")}，已具備初步 Brief 基礎`
       : "目前資訊仍偏概念階段，尚未形成可直接估價的完整條件";
   const missingText =
     missingInfo.length > 0
-      ? `仍需要補齊${missingInfo.slice(0, 4).join("、")}等關鍵資訊`
+      ? `仍需確認的關鍵缺口是${missingInfo.slice(0, 4).join("、")}`
       : "關鍵資訊已相對完整，接下來可進入企劃範圍與報價假設整理";
   const serviceFocus = getServiceFocus(form.services).join("、");
+  const serviceText =
+    selectedServices.length > 0
+      ? `需求已包含${selectedServices.slice(0, 5).join("、")}，${typeBreakdown.summaryAngle}`
+      : `${typeBreakdown.summaryAngle}目前尚未選擇服務項目，建議先確認必要服務與可延伸服務。`;
   const detailHint = input.trim()
-    ? "補充需求可作為企劃語氣、活動氛圍與服務深度判斷依據"
-    : "尚未補充活動細節，後續需要加入客戶原始想法以提高判斷精準度";
+    ? "補充需求已可作為活動氛圍、執行深度與報價假設的判斷依據"
+    : "尚未補充客戶原始描述，後續建議加入實際想法、參考圖或限制條件";
 
-  return `這是一場${guestText}的${profile.essence}需求，核心目標是${goal}。${profile.consultantAngle}${knownText}；${missingText}。下一步建議先針對${profile.nextFocus}進行確認，並同步整理${serviceFocus}，再收斂成初步企劃方向與報價範圍。${detailHint}。`;
+  return `${getSummaryOpening(form, profile.essence)}，核心目標是${goal}。${serviceText}${knownText}；${missingText}。下一步建議優先確認${profile.nextFocus}，並把${serviceFocus}拆成必要項目與可延伸項目，作為初步企劃與報價範圍。${detailHint}。`;
 }
 
 function makeBudgetTimelineAssessment(form: EventForm, rule?: EventRule) {
@@ -608,17 +689,13 @@ function makeBudgetTimelineAssessment(form: EventForm, rule?: EventRule) {
 
 function getFollowUpQuestions(form: EventForm, rule?: EventRule) {
   const questions: string[] = [];
-  const budgetItems = [
-    "場地",
-    form.services.includes("餐飲規劃") ? "餐飲" : "",
-    form.services.includes("場地佈置") ? "佈置" : "",
-    form.services.includes("攝影 / 錄影") ? "攝影 / 錄影" : "",
-    form.services.includes("主持安排") ? "主持" : "",
-    form.services.includes("現場執行") ? "現場執行" : "",
-  ].filter(Boolean);
 
-  if (!form.eventDate || !form.location.trim()) {
-    questions.push("活動日期與場地是否已確定，場地方是否有進退場、佈置時間或音響燈光限制？");
+  if (!form.eventDate) {
+    questions.push("活動日期或預計檔期是否已確認，是否有不可更動的時間限制？");
+  }
+
+  if (!form.location.trim()) {
+    questions.push("活動場地是否已確認，場地方是否有進退場、佈置時間、音響燈光或動線限制？");
   }
 
   if (!form.guestCount.trim()) {
@@ -626,11 +703,7 @@ function getFollowUpQuestions(form: EventForm, rule?: EventRule) {
   }
 
   if (form.budget === "尚未確定") {
-    questions.push(
-      budgetItems.length > 1
-        ? `預算是否包含${budgetItems.join("、")}等費用，或需要先拆成基本版與完整方案？`
-        : "預算是否已有可接受上限，是否需要先拆成基本版與完整方案？",
-    );
+    questions.push("預算是否包含場地、餐飲、佈置、攝影與現場執行費，或需要拆成基本版與完整方案？");
   }
 
   if (form.services.length === 0) {
@@ -638,19 +711,27 @@ function getFollowUpQuestions(form: EventForm, rule?: EventRule) {
   }
 
   if (form.services.includes("場地佈置")) {
-    questions.push("場地佈置是否已有風格參考、色系、背板、花藝、拍照區或桌面佈置需求？");
+    questions.push("場地佈置是否已有色系、背板、拍照區、花藝、桌面佈置或主視覺需求？");
   }
 
   if (form.services.includes("主持安排")) {
-    questions.push("主持流程預計多長，是否需要開場、互動橋段、頒獎、抽獎或儀式引導？");
+    questions.push("主持流程預計多長，主持風格希望正式、活潑還是溫馨，是否需要互動橋段？");
   }
 
   if (form.services.includes("攝影 / 錄影")) {
-    questions.push("影像紀錄需要涵蓋哪些時段，交付形式是精修照片、活動紀錄、短影音還是完整錄影？");
+    questions.push("影像需求是平面紀錄、精華影片、完整錄影，還是需要即時社群素材？");
+  }
+
+  if (form.services.includes("餐飲規劃")) {
+    questions.push("餐飲形式是套餐、Buffet、外燴還是輕食，是否有用餐動線與特殊飲食需求？");
   }
 
   if (form.services.includes("視覺設計")) {
     questions.push("是否已有品牌識別、主視覺、指定字體色系或必須露出的活動資訊？");
+  }
+
+  if (form.eventType === "品牌活動" || form.eventType === "新品發表會" || rule?.eventType === "品牌活動" || rule?.eventType === "新品發表會") {
+    questions.push("是否有品牌露出規範、產品展示方式、媒體邀請或 KOL 接待需求？");
   }
 
   if (getSelectedStyles(form.stylePreferences).length === 0) {
@@ -664,7 +745,7 @@ function getFollowUpQuestions(form: EventForm, rule?: EventRule) {
     questions.push(...ruleQuestions);
   }
 
-  return Array.from(new Set(questions)).slice(0, 5);
+  return Array.from(new Set(questions.map(cleanQuestionText).filter(Boolean))).slice(0, 5);
 }
 
 function getMaturityNote(maturity: Maturity, form: EventForm) {
@@ -690,26 +771,33 @@ function getMaturityNote(maturity: Maturity, form: EventForm) {
   return "目前仍偏初步想法，建議先確認活動日期、地點、人數、預算與必要服務項目。";
 }
 
-function getNextStep(form: EventForm, rule?: EventRule) {
+function getNextStep(form: EventForm, maturity: Maturity, rule?: EventRule) {
   const profile = getEventProfile(form.eventType || rule?.eventType || "");
   const daysUntil = getDaysUntil(form.eventDate);
-  const actions = [
-    `先完成一頁式活動規格表：${getMissingInfo(form).length > 0 ? `補齊${getMissingInfo(form).slice(0, 4).join("、")}` : "整理已確認資訊與企劃假設"}。`,
-    `接著針對${profile.nextFocus}建立確認清單。`,
-    form.services.includes("場地佈置") ? "針對佈置項目整理色系、背板、拍照區、桌面或花藝參考。" : "",
-    form.services.includes("主持安排") ? "針對主持需求拉出流程長度、橋段安排與主持語氣。" : "",
-    form.budget === "尚未確定" ? "預算未定時，先拆成基本版與完整方案，避免一次估價範圍過大。" : `以「${form.budget}」作為初步範圍，標註必做服務與可延伸服務。`,
-    daysUntil !== null && daysUntil <= 14 && daysUntil >= 0 ? "活動日期較近，需優先確認場地限制、供應商可配合時間與現場執行人力。" : "",
-  ].filter(Boolean);
+  const missingInfo = getMissingInfo(form);
+  const serviceFocus = getServiceFocus(form.services).slice(0, 2).join("、");
+  const urgentNote =
+    daysUntil !== null && daysUntil <= 14 && daysUntil >= 0
+      ? "由於活動日期較近，需同步確認供應商可配合時間與現場執行人力。"
+      : "";
 
-  return actions.slice(0, 4).join(" ");
+  if (maturity === "初步想法") {
+    return `建議先補齊日期、地點、人數、預算與必要服務；目前可先建立一頁式活動規格表，逐項確認${missingInfo.length > 0 ? missingInfo.slice(0, 4).join("、") : "活動基本條件"}，再判斷是否需要完整企劃、單項服務或分階段報價。${urgentNote}`.trim();
+  }
+
+  if (maturity === "方向明確") {
+    return `建議整理 MVP 活動範圍，把必要服務與可延伸服務分開：先確認${profile.nextFocus}，再針對${serviceFocus}建立初步清單，避免報價時範圍過大或漏掉關鍵執行項目。${urgentNote}`.trim();
+  }
+
+  return `建議進入初步企劃與報價整理：先確認場地條件、服務深度、執行人力與物料範圍，再依「${form.budget === "尚未確定" ? "基本版 / 完整版" : form.budget}」建立報價假設、企劃大綱與下一輪提案確認清單。${urgentNote}`.trim();
 }
 
 function getDynamicGoals(form: EventForm, rule?: EventRule) {
   const profile = getEventProfile(form.eventType || rule?.eventType || "");
+  const typeBreakdown = getEventTypeBreakdown(form.eventType || rule?.eventType || "");
   const goals = [
     form.purpose.trim() ? `達成「${form.purpose.trim()}」目的` : profile.defaultGoal,
-    rule?.breakdown.goals[0] ?? "把零散活動想法整理成清楚企劃方向",
+    ...typeBreakdown.goals,
   ];
 
   if (form.services.includes("現場執行")) {
@@ -720,7 +808,9 @@ function getDynamicGoals(form: EventForm, rule?: EventRule) {
 }
 
 function getDynamicMainNeeds(form: EventForm, rule?: EventRule) {
+  const typeBreakdown = getEventTypeBreakdown(form.eventType || rule?.eventType || "");
   const needs = [
+    ...typeBreakdown.mainNeeds,
     !form.eventDate || !form.location.trim() ? "確認活動日期、場地條件與進退場限制" : "",
     !form.guestCount.trim() ? "補齊預估人數與賓客組成" : "",
     form.budget === "尚未確定" ? "建立預算範圍與基本 / 完整方案" : `以「${form.budget}」拆分必要與延伸服務`,
@@ -758,6 +848,21 @@ function getStyleSuggestions(input: string, form: EventForm, rule?: EventRule) {
     (eventType === "生日派對" || eventType === "私人聚會") && selectedStyles.includes("活潑派對")
       ? "可補充餐飲形式、活動動線與主要來賓組成，避免現場安排過度鬆散。"
       : "",
+    selectedStyles.length === 0 && eventType === "婚禮 / 婚宴"
+      ? "可先討論浪漫典雅、溫馨親友或自然戶外三種方向，再依場地條件收斂。"
+      : "",
+    selectedStyles.length === 0 && (eventType === "品牌活動" || eventType === "新品發表會")
+      ? "可先以品牌專業或簡約質感作為基礎，再依產品調性加入材質與燈光層次。"
+      : "",
+    selectedStyles.length === 0 && eventType === "企業活動"
+      ? "可先以簡約質感與品牌專業作為主軸，讓流程控場與企業形象保持一致。"
+      : "",
+    selectedStyles.length === 0 && (eventType === "生日派對" || eventType === "私人聚會")
+      ? "可先在活潑派對、溫馨親友或簡約質感中選定一個主軸，再規劃佈置與餐飲。"
+      : "",
+    selectedStyles.length === 0 && eventType === "展覽 / 市集"
+      ? "可先以品牌專業或簡約質感建立視覺識別，再依攤位動線調整資訊層級。"
+      : "",
     form.services.includes("場地佈置")
       ? "因為有場地佈置需求，建議補充參考圖片、色系、背板尺寸與拍照區位置。"
       : "",
@@ -788,16 +893,8 @@ function getStyleBreakdown(input: string, form: EventForm, rule?: EventRule) {
     };
   }
 
-  const directMatches = styleOptions.filter(
-    (style) => style !== "尚未確定" && `${input} ${form.purpose}`.includes(style),
-  );
-  const ruleStyles = (rule?.breakdown.styleDirection ?? fallbackBreakdown.styleDirection).filter((style) =>
-    styleOptions.includes(style),
-  );
-  const inferred = Array.from(new Set([...directMatches, ...ruleStyles])).slice(0, 2);
-
   return {
-    styleDirection: inferred.length > 0 ? inferred : ["尚未確定，建議先收集 2–3 張參考圖片"],
+    styleDirection: ["尚未確定"],
     styleSuggestions: getStyleSuggestions(input, form, rule),
   };
 }
@@ -824,7 +921,7 @@ function analyzeEventBrief(input: string, form: EventForm): EventBriefResult {
     followUpQuestions: getFollowUpQuestions(form, rule),
     maturity,
     maturityNote: getMaturityNote(maturity, form),
-    nextStep: getNextStep(form, rule),
+    nextStep: getNextStep(form, maturity, rule),
   };
 }
 
@@ -1343,10 +1440,7 @@ export default function Home() {
                   <BreakdownGroup title="活動目標" items={result.breakdown.goals} />
                   <BreakdownGroup title="主要需求" items={result.breakdown.mainNeeds} />
                   <BreakdownGroup title="服務項目" items={result.breakdown.services} />
-                  <BreakdownGroup
-                    title={getSelectedStyles(eventForm.stylePreferences).length > 0 ? "已選風格" : "風格方向"}
-                    items={result.breakdown.styleDirection}
-                  />
+                  <BreakdownGroup title="已選風格" items={result.breakdown.styleDirection} />
                   {result.breakdown.styleSuggestions && result.breakdown.styleSuggestions.length > 0 ? (
                     <BreakdownGroup title="可延伸風格建議" items={result.breakdown.styleSuggestions} />
                   ) : null}
@@ -1360,13 +1454,13 @@ export default function Home() {
 
               <article className="rounded-lg bg-white/[0.075] p-5 ring-1 ring-white/10">
                 <p className="text-sm font-semibold text-[#e6c894]">D. 建議補問問題</p>
-                <ol className="mt-4 space-y-3">
+                <ol className="mt-4 list-none space-y-3">
                   {result.followUpQuestions.map((question, index) => (
                     <li key={question} className="flex gap-3 text-sm leading-7 text-white/84">
                       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-[#e6c894]">
                         {index + 1}
                       </span>
-                      <span>{question}</span>
+                      <span>{cleanQuestionText(question)}</span>
                     </li>
                   ))}
                 </ol>
