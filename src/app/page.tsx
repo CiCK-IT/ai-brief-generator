@@ -1460,12 +1460,9 @@ export default function Home() {
 
               <article className="rounded-lg bg-white/[0.075] p-5 ring-1 ring-white/10">
                 <p className="text-sm font-semibold text-[#e6c894]">D. 建議補問問題</p>
-                <ol className="mt-4 list-none space-y-3">
-                  {result.followUpQuestions.map((question, index) => (
-                    <li key={question} className="flex gap-3 text-sm leading-7 text-white/84">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-[#e6c894]">
-                        {index + 1}
-                      </span>
+                <ol className="mt-4 list-decimal space-y-3 pl-5">
+                  {result.followUpQuestions.map((question) => (
+                    <li key={question} className="pl-2 text-sm leading-7 text-white/84 marker:text-[#e6c894]">
                       <span>{cleanQuestionText(question)}</span>
                     </li>
                   ))}
