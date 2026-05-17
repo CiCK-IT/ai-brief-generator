@@ -312,18 +312,24 @@ const eventRules: EventRule[] = [
 
 const defaultResult: EventBriefResult = {
   summary:
-    "目前尚未開始整理。填寫活動資訊並補充需求後，Demo 會把零散想法轉成一份初步活動企劃 Brief，協助判斷活動重點、服務範圍、預算時程與下一步確認事項。",
+    "填寫活動資訊後，系統會整理活動目的、服務範圍、風格方向與下一步確認事項。",
   eventType: "等待活動資訊",
-  breakdown: fallbackBreakdown,
-  budgetTimelineAssessment: "尚未提供預算、日期與服務項目，因此目前只能先作為初步需求盤點。",
+  breakdown: {
+    goals: ["等待活動資訊"],
+    mainNeeds: ["填寫日期、地點、人數與預算後產生重點"],
+    services: ["尚未選擇服務項目"],
+    styleDirection: ["尚未確定"],
+    styleSuggestions: ["可先選擇 1–2 個風格偏好，或保留尚未確定。"],
+  },
+  budgetTimelineAssessment: "填寫活動日期、預算與服務項目後，會產生初步判斷。",
   followUpQuestions: [
     "活動日期與場地是否已確認？",
     "預算是否包含場地、餐飲、佈置與攝影？",
     "是否需要完整企劃流程，或只需要單項服務？",
   ],
   maturity: "初步想法",
-  maturityNote: "目前尚未輸入活動需求，建議先補齊活動類型、日期、地點、人數與服務項目。",
-  nextStep: "可以先填寫左側活動資訊，或點選範例快速產生活動 Brief。",
+  maturityNote: "尚未開始分析，先填寫活動資訊或點選範例即可產生 Brief。",
+  nextStep: "填寫左側欄位，或點選範例快速產生活動 Brief。",
 };
 
 const painPoints = [
@@ -401,7 +407,7 @@ function getGuestScaleText(guestCount: string) {
 }
 
 function cleanQuestionText(question: string) {
-  return question.replace(/^\s*(?:\d+[\s.、．)]*)+/u, "").trim();
+  return question.replace(/^\s*(?:[0-9０-９]+[\s.、．)]*)+/u, "").trim();
 }
 
 function findRuleByType(eventType: string) {
@@ -1209,7 +1215,7 @@ export default function Home() {
       <section id="brief-tool" className="relative mx-auto w-full max-w-7xl px-6 py-18 md:px-10 md:py-24">
         <SectionHeading
           eyebrow="Interactive Demo"
-          title="活動需求輸入區"
+          title="建立活動 Brief"
           description="填寫活動基本資訊與補充需求，系統會用前端規則模擬 AI，整理出活動企劃 Brief。"
         />
 
